@@ -3,6 +3,7 @@ from flask import Flask, render_template, redirect, request, make_response, sess
 from data import db_session
 from data.users import User
 from data.news import News
+from forms.news import NewsForm
 from forms.registerform import RegisterForm
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from forms.logform import LoginForm
@@ -88,6 +89,24 @@ def login():
                                message="Неправильный логин или пароль",
                                form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/news',  methods=['GET', 'POST'])
+@login_required
+def add_news():
+    form = NewsForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        news = News()
+        news.title = form.title.data
+        news.content = form.content.data
+        news.is_private = form.is_private.data
+        current_user.news.append(news)
+        db_sess.merge(current_user)
+        db_sess.commit()
+        return redirect('/')
+    return render_template('news.html', title='Добавление новости',
+                           form=form)
 
 
 if __name__ == '__main__':
